@@ -1,0 +1,21 @@
+Install-Module Microsoft.Graph -Scope CurrentUser
+Connect-MgGraph -Scopes "Files.ReadWrite.All", "Mail.ReadWrite", "MailboxSettings.ReadWrite"
+$siteUrl = "https://yourtenant.sharepoint.com/sites/yoursite"
+$filePath = "/Shared Documents/yourfile.docx"
+
+# Get the file metadata
+$file = Invoke-MgGraphRequest -Method GET -Uri "https://graph.microsoft.com/v1.0/sites/$siteUrl/drive/root:$filePath"
+
+# Check for sensitivity labels
+if ($file.sensitivityLabel) {
+    Write-Output "Sensitivity label found: $($file.sensitivityLabel)"
+} else {
+    Write-Output "No sensitivity label found on the file."
+}
+
+# Remove the sensitivity label
+$body = @{
+    sensitivityLabel = $null
+}
+
+Invoke-MgGraphRequest -Method PATCH -Uri "https://graph.microsoft.com/v1.0/sites/$siteUrl/drive/root:$filePath" -Body ($body | ConvertTo-Json)
