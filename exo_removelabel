@@ -1,0 +1,27 @@
+$user = "user@domain.com"
+
+# Get emails from the Sent Items folder
+$emails = Get-MgUserMessage -UserId $user -FolderId 'sentitems'
+
+foreach ($email in $emails) {
+    # Check for sensitivity labels
+    if ($email.sensitivityLabel) {
+        Write-Output "Email with subject '$($email.subject)' has sensitivity label: $($email.sensitivityLabel)"
+    } else {
+        Write-Output "Email with subject '$($email.subject)' has no sensitivity label."
+    }
+}
+
+
+foreach ($email in $emails) {
+    if ($email.sensitivityLabel) {
+        # Remove the sensitivity label
+        $body = @{
+            sensitivityLabel = ""
+        }
+
+        Invoke-MgGraphRequest -Method PATCH -Uri "https://graph.microsoft.com/v1.0/users/$user/messages/$($email.id)" -Body ($body | ConvertTo-Json)
+
+        Write-Output "Removed sensitivity label from email with subject '$($email.subject)'."
+    }
+}
