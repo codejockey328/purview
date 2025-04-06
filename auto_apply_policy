@@ -1,0 +1,48 @@
+# Import the necessary module
+Import-Module ExchangeOnlineManagement
+
+# Initialize variables
+$policyName = "Auto Apply-Internal SPO All File Types Group 3"
+$ruleName = "Auto Apply-Internal SPO All File Types Group 2 Rule"
+$fileTypes = @(".docx", ".xlsx", ".pptx", ".pdf")
+$csvPath = "path/to/your/site-collections.csv"  # Update with the path to your CSV file
+$siteCollections = Import-Csv -Path $csvPath
+
+# Connect to Exchange Online
+Connect-ExchangeOnline -UserPrincipalName your_email@domain.com -ShowProgress $true
+
+# Function to create the auto-apply policy
+function Create-AutoApplyPolicy {
+    param (
+        [string]$policyName,
+        [string]$ruleName,
+        [array]$fileTypes,
+        [array]$siteCollections
+    )
+
+    # Create a new auto-apply policy
+    $policy = New-DlpCompliancePolicy -Name $policyName -Workload SharePoint -Mode Enforce
+
+    # Add a rule to the policy
+    $rule = New-DlpComplianceRule -Name $ruleName -Policy $policyName -ContentContainsSensitiveInformation $fileTypes
+
+    # Add conditions to the rule for each site collection
+    foreach ($site in $siteCollections) {
+        try {
+            $siteUrl = $site.Url
+            # Add condition to rule (assuming New-DlpComplianceRule cmdlet supports conditions for site URL)
+            Set-DlpComplianceRule -Identity $rule.Identity -ContentContainsSensitiveInformation $fileTypes -SharePointSiteUrl $siteUrl
+        } catch {
+            Write-Error "Error processing site collection: $siteUrl"
+        }
+    }
+
+    # Publish the policy
+    Set-DlpCompliancePolicy -Identity $policy.Identity -State Enabled
+}
+
+# Call the function to create the policy
+Create-AutoApplyPolicy -policyName $policyName -ruleName $ruleName -fileTypes $fileTypes -siteCollections $siteCollections
+
+# Disconnect from Exchange Online
+Disconnect-ExchangeOnline -Confirm:$false
