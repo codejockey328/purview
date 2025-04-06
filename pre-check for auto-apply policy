@@ -1,0 +1,98 @@
+Step 1: Identify the Required Permissions and Access
+Check Permissions:
+
+Ensure you have the required permissions to create and manage site collections.
+Verify you have the SharePoint Administrator or Global Administrator role.
+Verify Site Collection Indexing:
+
+Ensure the site collections are properly indexed in SharePoint.
+Step 2: Develop the Precheck Script
+Create a PowerShell Script to Verify Permissions:
+
+Connect to SharePoint Online and check if you are a site collection administrator.
+Implement Checks for Site Collection Indexing:
+
+Verify that the site collections are indexed and accessible.
+Example PowerShell Script
+PowerShell
+# Import necessary modules
+Import-Module Microsoft.Online.SharePoint.PowerShell -DisableNameChecking
+Import-Module Microsoft.Graph
+
+# Initialize variables
+$adminEmail = "admin@domain.com"  # Replace with your admin email
+$siteCollectionUrl = "https://yourtenant.sharepoint.com/sites/yoursite"  # Replace with your site collection URL
+
+# Connect to SharePoint Online
+Connect-SPOService -Url "https://yourtenant-admin.sharepoint.com"  # Replace with your tenant admin URL
+
+# Check if the user is a site collection administrator
+$siteUser = Get-SPOUser -Site $siteCollectionUrl -LoginName $adminEmail
+if ($siteUser.IsSiteAdmin) {
+    Write-Output "$adminEmail is a site collection administrator for $siteCollectionUrl."
+} else {
+    Write-Output "$adminEmail is NOT a site collection administrator for $siteCollectionUrl."
+}
+
+# Connect to Microsoft Graph
+Connect-MgGraph -Scopes "Sites.Read.All"
+
+# Verify site collection indexing
+$site = Get-MgSite -SiteId $siteCollectionUrl
+if ($site) {
+    Write-Output "Site collection $siteCollectionUrl is indexed and accessible."
+} else {
+    Write-Output "Site collection $siteCollectionUrl is NOT indexed or accessible."
+}
+
+# Disconnect from SharePoint Online
+Disconnect-SPOService
+Follow-up Steps
+Test the PowerShell script in a controlled environment to ensure it works as expected.
+Adjust the script based on test results and re-run if necessary.
+This script will help you verify permissions and site collection indexing before proceeding with the creation of the Purview sensitivity label.
+
+Prerequisites
+Install Necessary Modules:
+SharePoint Online Management Shell
+Microsoft Graph PowerShell SDK
+AzureAD or Microsoft Graph PowerShell for role assignments
+Connect to SharePoint Online:
+Connect-SPOService -Url "https://yourtenant-admin.sharepoint.com"
+Check Site Collection Admins:
+$siteCollectionUrl = "https://yourtenant.sharepoint.com/sites/yoursite"
+$adminEmail = "admin@domain.com"  # Replace with the email of the Purview Compliance Data Administrator
+
+# Get the site collection administrators
+$siteAdmins = Get-SPOUser -Site $siteCollectionUrl -Limit All | Where-Object { $_.IsSiteAdmin -eq $true }
+
+if ($siteAdmins.Email -contains $adminEmail) {
+    Write-Output "$adminEmail is a site collection administrator for $siteCollectionUrl."
+} else {
+    Write-Output "$adminEmail is NOT a site collection administrator for $siteCollectionUrl."
+}
+Check OneDrive Access:
+$oneDriveUrl = "https://yourtenant-my.sharepoint.com/personal/user_domain_com"
+$adminEmail = "admin@domain.com"
+
+# Get the OneDrive site administrators
+$oneDriveAdmins = Get-SPOUser -Site $oneDriveUrl -Limit All | Where-Object { $_.IsSiteAdmin -eq $true }
+
+if ($oneDriveAdmins.Email -contains $adminEmail) {
+    Write-Output "$adminEmail is an administrator for the OneDrive site $oneDriveUrl."
+} else {
+    Write-Output "$adminEmail is NOT an administrator for the OneDrive site $oneDriveUrl."
+}
+
+Check Microsoft Teams Files Access:
+$teamSiteUrl = "https://yourtenant.sharepoint.com/sites/yourteam"
+$adminEmail = "admin@domain.com"
+
+# Get the team site document library administrators
+$teamSiteAdmins = Get-SPOUser -Site $teamSiteUrl -Limit All | Where-Object { $_.IsSiteAdmin -eq $true }
+
+if ($teamSiteAdmins.Email -contains $adminEmail) {
+    Write-Output "$adminEmail is an administrator for the Teams site $teamSiteUrl."
+} else {
+    Write-Output "$adminEmail is NOT an administrator for the Teams site $teamSiteUrl."
+}
